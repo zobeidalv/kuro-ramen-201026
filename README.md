@@ -1,1 +1,38 @@
-# kuro-ramen-201026
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kuro Ramen</title><style>body{margin:0;font-family:system-ui;background:#09090b;color:#fff} .container{max-width:1100px;margin:auto;padding:20px}.hero{text-align:center}.hero h1{color:#ef4444}.grid{display:grid;grid-template-columns:1fr;gap:20px}@media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}.card{background:#18181b;padding:20px;border-radius:24px}.btn{padding:14px;border:none;border-radius:14px;background:#27272a;color:#fff;cursor:pointer}.active{background:#dc2626!important}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{width:100%}.field{width:100%;padding:12px;border-radius:12px;border:none;margin:6px 0}.counter{display:flex;justify-content:center;gap:12px;align-items:center}.counter button{width:44px;height:44px}.menuItem{display:flex;justify-content:space-between;align-items:center;background:#27272a;margin:8px 0;padding:12px;border-radius:12px}.note{background:#78350f;padding:12px;border-radius:12px;margin-top:10px}.green{background:#16a34a}.schedule{display:grid;grid-template-columns:1fr 1fr;gap:10px}.summary{margin-top:20px}.total{font-size:32px;color:#ef4444;font-weight:700}</style></head><body><div class="container"><div class="hero"><h1>🍜 KURO RAMEN</h1></div><div class="grid"><div class="card"><h3>📍 Ciudad</h3><div class="row"><button id=gBtn class="btn active" onclick="setCity('Guasave')">Guasave</button><button id=cBtn class="btn" onclick="setCity('Culiacán')">Culiacán</button></div><h3>🍜 Servicio</h3><div class="row"><button id=rBtn class="btn active" onclick="setType('reserva')">Reservar mesa</button><button id=pBtn class="btn" onclick="setType('pickup')">Pedido para llevar</button></div><input id=nombre class=field placeholder='Nombre'><input id=telefono class=field placeholder='Teléfono'><div id=peopleBox><h4>👥 Personas</h4><div class='counter'><button class=btn onclick='changePeople(-1)'>-</button><span id=people>1</span><button class='btn active' onclick='changePeople(1)'>+</button></div><div id=avail></div></div><div id=fecha class='row'></div><h4>⏰ Horarios</h4><div id=horarios class=schedule></div><div id=legend class=note>👥 Cupo limitado a 10 personas por horario.</div></div><div class='card'><h3>🍜 Menú</h3><div class='note'>⚠️ Los alimentos y bebidas no seleccionados estarán sujetos a disponibilidad.</div><div id=menu></div></div></div><div class='card summary'><h3>📋 Resumen</h3><div id=resumen></div><div id=total class=total>$0</div><button class='btn green full' onclick='sendWA()'>🟢 Enviar reserva</button></div></div><script>let city='Guasave',type='reserva',people=1,time='';const qty={};const data={Guasave:{dates:['20 Noviembre','21 Noviembre'],res:['2:00 PM','4:00 PM','6:00 PM','8:00 PM'],pick:['3:00 PM','5:00 PM','7:00 PM','9:00 PM']},'Culiacán':{dates:['22 Noviembre'],res:['4:00 PM','6:00 PM','8:00 PM'],pick:['5:00 PM','7:00 PM','9:00 PM']}};const caps={};['20 Noviembre','21 Noviembre'].forEach(d=>['2:00 PM','4:00 PM','6:00 PM','8:00 PM'].forEach(h=>caps[d+'-'+h]=10));['4:00 PM','6:00 PM','8:00 PM'].forEach(h=>caps['22 Noviembre-'+h]=10);const items=[['🥟 Gyozas',160],['🍗 Karaage',140],['🍜 Tonkotsu',240],['🍜 Karai Tonkotsu',250],['🌱 Tofu-Men',250],['🥤 Calpis',50],['🧋 Milk Tea Oolong',70],['🍹 Drink Coqueto',100,'Culiacán']];function setCity(v){city=v;time='';render()}function setType(v){type=v;time='';render()}function cap(){let f=document.getElementById('fecha');return caps[(f?.value||data[city].dates[0])+'-'+time]??10}function changePeople(n){ const nuevo=people+n; if(nuevo<1)return; if(type==='reserva' && time && nuevo>cap()) return; people=nuevo; render(); }function render(){gBtn.classList.toggle('active',city==='Guasave');cBtn.classList.toggle('active',city==='Culiacán');rBtn.classList.toggle('active',type==='reserva');pBtn.classList.toggle('active',type==='pickup');peopleBox.style.display=type==='reserva'?'block':'none';legend.style.display=type==='reserva'?'block':'none';let f=fecha;f.innerHTML='';data[city].dates.forEach(d=>f.innerHTML+=`<button type="button" class="btn ${f.dataset.sel===d?'active':''}" onclick="fecha.dataset.sel='${d}';render()">${d}</button>`);horarios.innerHTML='';(type==='reserva'?data[city].res:data[city].pick).forEach(h=>{let c=(caps[(f.value||data[city].dates[0])+'-'+h]??10);horarios.innerHTML+=`<button class="btn ${time===h?'active':''}" onclick="time='${h}';render()">${h}<br>${type==='reserva'?(c>=6?'🟢 Disponible':(c>=1?'🟡 Últimos lugares':'🔴 Agotado')):''}</button>`});document.getElementById('people').innerText=people; avail.innerHTML=time&&type==='reserva'?`👥 Cupo limitado a 10 personas por horario`:'';let total=0,m='';items.filter(i=>!i[2]||i[2]===city).forEach(i=>{qty[i[0]]??=0;total+=qty[i[0]]*i[1];m+=`<div class='menuItem'><div>${i[0]}<br>$${i[1]}</div><div><button class='btn' onclick="qty['${i[0]}']=Math.max(0,qty['${i[0]}']-1);render()">-</button> ${qty[i[0]]} <button class='btn active' onclick="qty['${i[0]}']++;render()">+</button></div></div>`});menu.innerHTML=m;resumen.innerHTML=`📍 ${city}<br>📦 ${type==='reserva'?'Reserva':'Pickup'}<br>📅 ${(fecha.dataset.sel||data[city].dates[0])}<br>⏰ ${time||'Sin seleccionar'}<br>${type==='reserva'?'👥 '+people+' personas<br>⏱️ Tiempo de servicio: <b>1 hora con 30 minutos</b>.<br>⭐ Te agradecemos llegar puntualmente.':''}`;totalEl=document.getElementById('total');totalEl.textContent='$'+total;}function sendWA(){let t=0;items.forEach(i=>t+=(qty[i[0]]||0)*i[1]);if(type==='reserva'&&time){let k=fecha.value+'-'+time;if(people>(caps[k]??10)){alert('No hay cupo suficiente');return;}caps[k]-=people;}let msg=`🍜 KURO RAMEN
+📍 ${city}
+📅 ${(fecha.dataset.sel||data[city].dates[0])}
+⏰ ${time}
+👤 ${nombre.value}
+📱 ${telefono.value}
+💰 $${t}`;window.open('https://wa.me/526871343731?text='+encodeURIComponent(msg));render()}render();
+function sendWA(){
+ const nombre=document.getElementById("nombre").value.trim();
+ const telefono=document.getElementById("telefono").value.trim();
+ const fechaSel=(fecha.dataset.sel||data[city].dates[0]);
+ if(!nombre){alert("Ingresa tu nombre");return;}
+ if(!telefono){alert("Ingresa tu teléfono");return;}
+ if(!time){alert("Selecciona un horario");return;}
+ let total=0,pedido=[];
+ items.filter(i=>!i[2]||i[2]===city).forEach(i=>{let c=qty[i[0]]||0;if(c>0){pedido.push(`${c}x ${i[0]}`);total+=c*i[1];}});
+ let msg=`🍜 KURO RAMEN
+
+📍 Ciudad: ${city}
+📦 Servicio: ${type==='reserva'?'Reserva':'Pedido para llevar'}
+📅 Fecha: ${fechaSel}
+⏰ Horario: ${time}
+👤 Nombre: ${nombre}
+📱 Teléfono: ${telefono}
+`;
+ if(type==='reserva'){msg+=`👥 Personas: ${people}
+⏱️ Tiempo de servicio: 1 hora con 30 minutos
+⭐ Te agradecemos llegar puntualmente.
+`; }
+ msg+=`
+🍜 PEDIDO
+${pedido.length?pedido.join('\n'):'Sin productos seleccionados'}
+
+💰 TOTAL: $${total}`;
+ const url='https://wa.me/526871343731?text='+encodeURIComponent(msg);
+ window.location.href=url;
+}
+</script></body></html>
